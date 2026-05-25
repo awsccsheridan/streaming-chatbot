@@ -38,7 +38,7 @@ export class ChatbotStack extends cdk.Stack {
       cors: {
         allowedOrigins: ["*"],
         allowedMethods: [lambda.HttpMethod.ALL],
-        allowedHeaders: ["Content-Type"],
+        allowedHeaders: ["*"],
       },
     });
 
