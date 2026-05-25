@@ -21,7 +21,7 @@ export class ChatbotStack extends cdk.Stack {
       },
       environment: {
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
-        MODEL_ID: "amazon.nova-2-lite-v1:0",
+        MODEL_ID: "amazon.nova-lite-v1:0",
       },
     });
 
