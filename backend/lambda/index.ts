@@ -3,17 +3,26 @@ import type { LambdaFunctionURLEvent } from "aws-lambda";
 
 declare const awslambda: {
   streamifyResponse: (
-    handler: (event: LambdaFunctionURLEvent, responseStream: NodeJS.WritableStream) => Promise<void>
+    handler: (
+      event: LambdaFunctionURLEvent,
+      responseStream: NodeJS.WritableStream
+    ) => Promise<void>
   ) => unknown;
   HttpResponseStream: {
     from: (
       responseStream: NodeJS.WritableStream,
-      metadata: { statusCode: number; headers: Record<string, string> }
+      metadata: {
+        statusCode: number;
+        headers: Record<string, string>;
+      }
     ) => NodeJS.WritableStream;
   };
 };
 
-const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION ?? "us-east-1" });
+const client = new BedrockRuntimeClient({
+  region: process.env.AWS_REGION ?? "us-east-1",
+});
+
 const MODEL_ID = process.env.MODEL_ID ?? "global.amazon.nova-2-lite-v1:0";
 
 function parseMessage(event: LambdaFunctionURLEvent): string {
@@ -24,26 +33,32 @@ function parseMessage(event: LambdaFunctionURLEvent): string {
     : event.body;
 
   const parsed = JSON.parse(body) as { message?: unknown };
+
   return typeof parsed.message === "string" ? parsed.message.trim() : "";
 }
 
 function getHeader(event: LambdaFunctionURLEvent, headerName: string): string | undefined {
   const target = headerName.toLowerCase();
-  const match = Object.entries(event.headers ?? {}).find(([key]) => key.toLowerCase() === target);
+
+  const match = Object.entries(event.headers ?? {}).find(
+    ([key]) => key.toLowerCase() === target
+  );
+
   return match?.[1] ?? undefined;
 }
 
 function createResponseStream(
   event: LambdaFunctionURLEvent,
   rawResponseStream: NodeJS.WritableStream,
-  statusCode = 200
+  statusCode = 200,
+  contentType = "text/plain; charset=utf-8"
 ): NodeJS.WritableStream {
   const origin = getHeader(event, "origin") ?? "*";
 
   return awslambda.HttpResponseStream.from(rawResponseStream, {
     statusCode,
     headers: {
-      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Type": contentType,
       "Access-Control-Allow-Origin": origin,
       "Access-Control-Allow-Headers": "Content-Type",
       "Access-Control-Allow-Methods": "OPTIONS,POST",
@@ -53,12 +68,22 @@ function createResponseStream(
 }
 
 export const handler = awslambda.streamifyResponse(
-  async (event: LambdaFunctionURLEvent, rawResponseStream: NodeJS.WritableStream): Promise<void> => {
+  async (
+    event: LambdaFunctionURLEvent,
+    rawResponseStream: NodeJS.WritableStream
+  ): Promise<void> => {
     let responseStream: NodeJS.WritableStream | undefined;
 
     try {
       if (event.requestContext.http.method === "OPTIONS") {
-        responseStream = createResponseStream(event, rawResponseStream, 204);
+        responseStream = createResponseStream(
+          event,
+          rawResponseStream,
+          200,
+          "application/json"
+        );
+
+        responseStream.write("");
         return;
       }
 
@@ -69,6 +94,7 @@ export const handler = awslambda.streamifyResponse(
       }
 
       let userMessage = "";
+
       try {
         userMessage = parseMessage(event);
       } catch {
@@ -93,7 +119,8 @@ export const handler = awslambda.streamifyResponse(
         },
         system: [
           {
-            text: "You are a friendly AI personal assistant for an AWS beginner workshop. Explain clearly and keep answers helpful.",
+            text:
+              "You are a friendly AI personal assistant for an AWS beginner workshop. Explain clearly and keep answers helpful.",
           },
         ],
         messages: [
@@ -113,15 +140,21 @@ export const handler = awslambda.streamifyResponse(
 
       for await (const eventChunk of bedrockResponse.stream) {
         const text = eventChunk.contentBlockDelta?.delta?.text;
+
         if (text) {
           responseStream.write(text);
         }
       }
     } catch (error) {
       console.error(error);
+
       responseStream ??= createResponseStream(event, rawResponseStream, 500);
+
       const message = error instanceof Error ? error.message : "Unknown error";
-      responseStream.write(`Something went wrong while streaming from Bedrock: ${message}`);
+
+      responseStream.write(
+        `Something went wrong while streaming from Bedrock: ${message}`
+      );
     } finally {
       responseStream?.end();
     }
