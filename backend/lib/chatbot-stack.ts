@@ -21,7 +21,7 @@ export class ChatbotStack extends cdk.Stack {
       },
       environment: {
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
-        MODEL_ID: "amazon.nova-lite-v1:0",
+        MODEL_ID: "global.amazon.nova-2-lite-v1:0",
       },
     });
 
@@ -35,11 +35,6 @@ export class ChatbotStack extends cdk.Stack {
     const functionUrl = chatbotFunction.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
       invokeMode: lambda.InvokeMode.RESPONSE_STREAM,
-      cors: {
-        allowedOrigins: ["http://localhost:3000"],
-        allowedMethods: [lambda.HttpMethod.GET, lambda.HttpMethod.POST],
-        allowedHeaders: ["content-type"],
-      },
     });
 
     new cdk.CfnOutput(this, "ChatbotApiUrl", {
