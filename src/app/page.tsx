@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { MessageContent } from "@/components/MessageContent";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -24,6 +25,11 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages]);
 
   async function sendMessage(messageText?: string) {
     const userMessage = (messageText ?? input).trim();
@@ -110,9 +116,9 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-6 md:px-8">
-      <section className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-5xl flex-col rounded-3xl border border-white/10 bg-white/10 shadow-2xl backdrop-blur">
-        <header className="border-b border-white/10 p-5 md:p-6">
+    <main className="flex h-screen flex-col overflow-hidden px-4 py-4 md:px-8 md:py-6">
+      <section className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col rounded-3xl border border-white/10 bg-white/10 shadow-2xl backdrop-blur">
+        <header className="shrink-0 border-b border-white/10 p-5 md:p-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.25em] text-aws-orange">
@@ -131,7 +137,7 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-5 md:p-6">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5 md:p-6">
           {messages.map((message, index) => (
             <div
               key={`${message.role}-${index}`}
@@ -144,13 +150,14 @@ export default function Home() {
                     : "border border-white/10 bg-slate-950/70 text-slate-100"
                 }`}
               >
-                {message.content || <span className="animate-pulse">Thinking...</span>}
+                <MessageContent content={message.content} role={message.role} />
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
 
-        <div className="border-t border-white/10 p-5 md:p-6">
+        <div className="shrink-0 border-t border-white/10 p-5 md:p-6">
           <div className="mb-4 flex flex-wrap gap-2">
             {starterPrompts.map((prompt) => (
               <button

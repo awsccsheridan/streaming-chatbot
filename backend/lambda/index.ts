@@ -114,7 +114,7 @@ export const handler = awslambda.streamifyResponse(
       const command = new ConverseStreamCommand({
         modelId: MODEL_ID,
         inferenceConfig: {
-          maxTokens: 700,
+          maxTokens: 4096,
           temperature: 0.7,
         },
         system: [

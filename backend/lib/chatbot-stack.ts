@@ -9,7 +9,7 @@ export class ChatbotStack extends cdk.Stack {
     super(scope, id, props);
 
     const chatbotFunction = new nodeLambda.NodejsFunction(this, "StreamingChatbotFunction", {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       entry: "lambda/index.ts",
       handler: "handler",
       timeout: cdk.Duration.seconds(60),
@@ -17,7 +17,7 @@ export class ChatbotStack extends cdk.Stack {
       bundling: {
         minify: true,
         sourceMap: true,
-        target: "node20",
+        target: "node22",
       },
       environment: {
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
