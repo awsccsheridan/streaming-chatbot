@@ -32,10 +32,7 @@ export const handler = awslambda.streamifyResponse(
     const responseStream = awslambda.HttpResponseStream.from(rawResponseStream, {
       statusCode: 200,
       headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "OPTIONS,POST",
+         "Content-Type": "text/plain; charset=utf-8",
       },
     });
 
