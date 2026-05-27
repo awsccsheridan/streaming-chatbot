@@ -37,32 +37,15 @@ function parseMessage(event: LambdaFunctionURLEvent): string {
   return typeof parsed.message === "string" ? parsed.message.trim() : "";
 }
 
-function getHeader(event: LambdaFunctionURLEvent, headerName: string): string | undefined {
-  const target = headerName.toLowerCase();
-
-  const match = Object.entries(event.headers ?? {}).find(
-    ([key]) => key.toLowerCase() === target
-  );
-
-  return match?.[1] ?? undefined;
-}
-
 function createResponseStream(
-  event: LambdaFunctionURLEvent,
   rawResponseStream: NodeJS.WritableStream,
   statusCode = 200,
   contentType = "text/plain; charset=utf-8"
 ): NodeJS.WritableStream {
-  const origin = getHeader(event, "origin") ?? "*";
-
   return awslambda.HttpResponseStream.from(rawResponseStream, {
     statusCode,
     headers: {
       "Content-Type": contentType,
-      "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Access-Control-Allow-Methods": "OPTIONS,POST",
-      Vary: "Origin",
     },
   });
 }
@@ -77,9 +60,8 @@ export const handler = awslambda.streamifyResponse(
     try {
       if (event.requestContext.http.method === "OPTIONS") {
         responseStream = createResponseStream(
-          event,
           rawResponseStream,
-          200,
+          204,
           "application/json"
         );
 
@@ -88,7 +70,7 @@ export const handler = awslambda.streamifyResponse(
       }
 
       if (event.requestContext.http.method !== "POST") {
-        responseStream = createResponseStream(event, rawResponseStream, 405);
+        responseStream = createResponseStream(rawResponseStream, 405);
         responseStream.write('Use POST with a JSON body like { "message": "Hello" }.');
         return;
       }
@@ -98,18 +80,18 @@ export const handler = awslambda.streamifyResponse(
       try {
         userMessage = parseMessage(event);
       } catch {
-        responseStream = createResponseStream(event, rawResponseStream, 400);
+        responseStream = createResponseStream(rawResponseStream, 400);
         responseStream.write('Invalid JSON. Send a body like { "message": "Hello" }.');
         return;
       }
 
       if (!userMessage) {
-        responseStream = createResponseStream(event, rawResponseStream, 400);
+        responseStream = createResponseStream(rawResponseStream, 400);
         responseStream.write("Please send a message to start the conversation.");
         return;
       }
 
-      responseStream = createResponseStream(event, rawResponseStream);
+      responseStream = createResponseStream(rawResponseStream);
 
       const command = new ConverseStreamCommand({
         modelId: MODEL_ID,
@@ -148,7 +130,7 @@ export const handler = awslambda.streamifyResponse(
     } catch (error) {
       console.error(error);
 
-      responseStream ??= createResponseStream(event, rawResponseStream, 500);
+      responseStream ??= createResponseStream(rawResponseStream, 500);
 
       const message = error instanceof Error ? error.message : "Unknown error";
 

@@ -35,6 +35,12 @@ export class ChatbotStack extends cdk.Stack {
     const functionUrl = chatbotFunction.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
       invokeMode: lambda.InvokeMode.RESPONSE_STREAM,
+      cors: {
+        allowedOrigins: ["*"],
+        allowedMethods: [lambda.HttpMethod.POST],
+        allowedHeaders: ["content-type"],
+        maxAge: cdk.Duration.minutes(10),
+      },
     });
 
     new cdk.CfnOutput(this, "ChatbotApiUrl", {
