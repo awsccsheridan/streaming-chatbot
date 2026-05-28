@@ -1052,6 +1052,10 @@ y
 
 This removes the CDK-created backend resources.
 
+1. Delete Cloud watch manually of not deleted with cdk destroy : https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#logsV2:log-groups 
+2. Also check Role ( Delete manually )  : https://us-east-1.console.aws.amazon.com/iam/home?region=us-east-1#/roles 
+3. Make sure to desable your access key and secrete key ( click on your user ) : https://us-east-1.console.aws.amazon.com/iam/home?region=us-east-1#/users
+4. Delete Amplify ( check region if you do not see any apps)  : https://us-east-1.console.aws.amazon.com/amplify/apps
 ---
 
 ## 23. Workshop Presenter Flow
